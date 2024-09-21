@@ -1,11 +1,21 @@
 const {UserModel} = require('../db/db');
+const jwt = require('jsonwebtoken');
+
 
 
 async function authMiddleware(req, res, next) {
-    const { username } = req.body;
+    const token = req.headers.authorization;
+
+    if (!token) {
+        return res.status(401).json({
+            message: "Unauthorized"
+        });
+    }
 
     try {
-        const user = await UserModel.findOne({ username });
+        const decodedUser = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await UserModel.findOne({ username: decodedUser.username });
 
         if (!user) {
             return res.status(404).json({

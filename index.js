@@ -4,6 +4,8 @@ const {courseRouter} = require('./routes/course');
 const {adminRouter} = require('./routes/admin');
 const mongoose = require('mongoose');
 require("dotenv").config();
+const app = express();
+app.use(express.json());
 
 
 //Connect to database 
@@ -19,12 +21,8 @@ async function connectDB(){
 connectDB();
 
 
-const app = express();
+mongoose.connect(process.env.MONGO_URI);
 
-const mongoURI = process.env.MONGO_URI;
-mongoose.connect(mongoURI);
-
-app.use(express.json());
 
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/course', courseRouter);
