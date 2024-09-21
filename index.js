@@ -26,6 +26,25 @@ app.get('/my-purchases', (req, res) => {});
 app.post('/course/purchase', (req, res) => {});
 
 
+/*
+Add routes for admin login, admin signup, create a course, delete a course, add course content.
+*/
+
+//Admin signup route
+app.post('/admin/signup', (req, res) => {});
+
+//Admin signin route
+app.post('/admin/signin', (req, res) => {});
+
+//Create course route
+app.post('/admin/course/create', (req, res) => {}); 
+
+//Delete course route
+app.delete('/admin/course/delete', (req, res) => {});
+
+//Add course content route
+app.post('/admin/course/content/add', (req, res) => {});
+
 
 
 app.listen(3000, () => {
