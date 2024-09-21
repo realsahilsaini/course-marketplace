@@ -2,19 +2,19 @@ const {Router} = require('express');
 const courseRouter = Router();
 
 
-//See course route
-courseRouter.get('/courses', (req, res) => {
-  res.send("Courses");
+//See all courses route
+courseRouter.get('/all', (req, res) => {
+  res.json({message: "All courses"});
 });
 
-//Purchase course route
-courseRouter.get('/my-purchases', (req, res) => {
-  res.send("My Purchases");
+//Specific course route
+courseRouter.get('/:id', (req, res) => {
+  res.json({message: "Single course"});
 });
 
-//Puchase a course route
-courseRouter.post('/purchase', (req, res) => {
-  res.send("Purchasing a course");
+//Search course by title route
+courseRouter.post('/search/:title', (req, res) => {
+  res.json({message: "Search by title"});
 });
 
 module.exports = {
