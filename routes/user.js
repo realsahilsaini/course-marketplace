@@ -163,6 +163,7 @@ userRouter.post("/purchase", userAuth, async function (req, res) {
       userId: req.decodedUserID, 
       courseId: course._id, 
     });
+
     await newPurchase.save();
 
     res.status(201).json({
@@ -186,7 +187,24 @@ userRouter.get("/purchases", userAuth, async function (req, res) {
 
     const allPurchases = await PurchaseModel.find({ userId: req.decodedUserID });
 
-    res.json({allPurchases});
+    if(allPurchases.length === 0){
+      return res.status(404).json({
+        message: "No purchases found"
+      });
+    }
+
+
+    //CourseModel's for user purchases
+    const CourseDetails = [];
+
+    for (let i = 0; i < allPurchases.length; i++) {
+      const course = await CourseModel.findById(allPurchases[i].courseId);
+      CourseDetails.push(course);
+    }
+
+    res.send(CourseDetails);
+
+
 
   }catch(err){
     res.status(500).json({
