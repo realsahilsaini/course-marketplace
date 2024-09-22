@@ -3,6 +3,7 @@ const { Router } = require("express");
 const { userAuth } = require("../auth/userAuth");
 const jwt = require("jsonwebtoken");
 const { z } = require("zod");
+const bcrypt = require("bcrypt");
 const userRouter = Router();
 
 //Input validation schema
@@ -35,7 +36,7 @@ const requiredBodySignup = z.object({
 //User signup route 
 userRouter.post("/signup", async function (req, res) {
   try {
-    const validatedBody = requiredBody.parse(req.body);
+    const validatedBody = requiredBodySignup.parse(req.body);
 
     const existingUserWithUsername = await UserModel.findOne({
       username: validatedBody.username,
@@ -51,7 +52,18 @@ userRouter.post("/signup", async function (req, res) {
       });
     }
 
-    const newUser = new UserModel(validatedBody);
+
+    //hash the password
+    const hashedPassword = await bcrypt.hash(validatedBody.password, 10);
+
+    const newUser = new UserModel({
+      email: validatedBody.email,
+      username: validatedBody.username,
+      password: hashedPassword,
+      firstName: validatedBody.firstName,
+      lastName: validatedBody.lastName,
+    });
+    
     await newUser.save();
 
     res.status(201).json({ message: "Signup successful" });
@@ -81,8 +93,18 @@ userRouter.post("/signin", async function (req, res) {
         username: username,
     });
 
-    if (!user || user.password !== password) {
+    console.log(user);
+
+    if (!user) {
       return res.status(404).json({
+        message: "Invalid username or password",
+      });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({
         message: "Invalid username or password",
       });
     }
