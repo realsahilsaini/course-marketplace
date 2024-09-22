@@ -13,6 +13,8 @@ const Admin = new Schema({
   email: {type: String, unique: true},
   username: {type: String, unique: true},
   password: String,
+  firstName: String,
+  lastName: String,
 });
 
 const Course = new Schema({
@@ -34,7 +36,7 @@ const Purchase = new Schema({
 
 const UserModel = mongoose.model('users', User);
 const CourseModel = mongoose.model('courses', Course);
-const AdminModel = mongoose.model('admin', Admin);
+const AdminModel = mongoose.model('admins', Admin);
 const PurchaseModel = mongoose.model('purchases', Purchase);
 
 

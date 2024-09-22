@@ -1,6 +1,6 @@
 const { UserModel, PurchaseModel, CourseModel } = require("../db/db");
 const { Router } = require("express");
-const { authMiddleware } = require("../auth/auth");
+const { userAuth } = require("../auth/userAuth");
 const jwt = require("jsonwebtoken");
 const { z } = require("zod");
 const userRouter = Router();
@@ -110,7 +110,7 @@ userRouter.post("/signin", async function (req, res) {
 });
 
 //purchase course route
-userRouter.post("/purchase", authMiddleware, async function (req, res) {
+userRouter.post("/purchase", userAuth, async function (req, res) {
   
   try{
     //Checks if the course exists in the database
@@ -159,7 +159,7 @@ userRouter.post("/purchase", authMiddleware, async function (req, res) {
 });
 
 //Get all purchases route
-userRouter.get("/purchases", authMiddleware, async function (req, res) {
+userRouter.get("/purchases", userAuth, async function (req, res) {
   try{
 
     const allPurchases = await PurchaseModel.find({ userId: req.decodedUserID });
