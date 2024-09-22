@@ -4,6 +4,7 @@ const { CourseModel } = require("../db/db");
 const { adminAuth } = require("../auth/adminAuth");
 const adminRouter = Router();
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const { z } = require("zod");
 
 //Input validation schema
@@ -44,7 +45,15 @@ adminRouter.post("/signup", async (req, res) => {
       });
     }
 
-    const newAdmin = new AdminModel(validatedBody);
+    const hashedPassword = await bcrypt.hash(validatedBody.password, 10);
+
+    const newAdmin = new AdminModel({
+      email: validatedBody.email,
+      username: validatedBody.username,
+      password: hashedPassword,
+      firstName: validatedBody.firstName,
+      lastName: validatedBody.lastName,
+    });
 
     await newAdmin.save();
 
@@ -69,14 +78,18 @@ adminRouter.post("/signin", async (req, res) => {
     });
   }
 
-  if (existingAdmin.password !== password) {
+  const passwordMatch = await bcrypt.compare(password, existingAdmin.password);
+
+  if (!passwordMatch) {
     return res.status(400).json({
       message: "Invalid password",
     });
   }
 
+
+
   const token = jwt.sign(
-    { username: existingAdmin.username },
+    { adminId: existingAdmin._id },
     process.env.JWT_SECRET
   );
 
