@@ -12,27 +12,17 @@ async function authMiddleware(req, res, next) {
         });
     }
 
-    try {
-        const decodedUser = jwt.verify(token, process.env.JWT_SECRET);
-
-        const user = await UserModel.findOne({ username: decodedUser.username });
-
-        if (!user) {
-            return res.status(404).json({
-                message: "User not found"
+    jwt.verify(token, process.env.JWT_SECRET, (err, decodedUser) => {
+        if (err) {
+            return res.status(401).json({
+                message: "Unauthorized"
             });
         }
 
-        req.user = user;
-
+        req.decodedUserID = decodedUser.userID;
         next();
-
-    } catch (err) {
-        console.log("Error finding user", err);
-        res.status(500).json({
-            message: "Internal server error"
-        });
-    }
+    });
+    
 }
 
 

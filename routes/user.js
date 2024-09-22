@@ -1,4 +1,4 @@
-const { UserModel } = require("../db/db");
+const { UserModel, PurchaseModel, CourseModel } = require("../db/db");
 const { Router } = require("express");
 const { authMiddleware } = require("../auth/auth");
 const jwt = require("jsonwebtoken");
@@ -6,7 +6,9 @@ const { z } = require("zod");
 const userRouter = Router();
 
 //Input validation schema
-const requiredBody = z.object({
+const requiredBodySignup = z.object({
+  email: z.string().email("Invalid email format"),
+
   username: z
     .string()
     .min(3, "Username must be at least 3 characters long")
@@ -24,20 +26,28 @@ const requiredBody = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number")
     .regex(/[\W_]/, "Password must contain at least one special character"),
+
+    firstName: z.string().min(1, "First name cannot be empty"),
+
+    lastName: z.string().min(1, "Last name cannot be empty"),
 });
 
-//User signup
+//User signup route 
 userRouter.post("/signup", async function (req, res) {
   try {
     const validatedBody = requiredBody.parse(req.body);
 
-    const existingUser = await UserModel.findOne({
+    const existingUserWithUsername = await UserModel.findOne({
       username: validatedBody.username,
     });
 
-    if (existingUser) {
+    const existingUserWithEmail = await UserModel.findOne({
+      email: validatedBody.email, 
+    });
+
+    if (existingUserWithEmail || existingUserWithUsername) {
       return res.status(400).json({
-        message: "User already exists",
+        message: "User already exists with this email or username",
       });
     }
 
@@ -49,39 +59,35 @@ userRouter.post("/signup", async function (req, res) {
     //handel error from zod
     if (err instanceof z.ZodError) {
       return res.status(400).json({
-        message: err.errors[0].message,
+        message: err.errors[0],
       });
     }
 
     //handel other errors
     res.status(500).json({ 
-        message: "Internal server error" 
+        message: "Internal server error" ,
+        error: err.message
     });
   }
 });
 
-//User signin
+//User signin route
 userRouter.post("/signin", async function (req, res) {
   try {
-    const validatedBody = requiredBody.parse(req.body);
+
+    const { username, password } = req.body;
 
     const user = await UserModel.findOne({ 
-        username: validatedBody.username
+        username: username,
     });
 
-    if (!user) {
+    if (!user || user.password !== password) {
       return res.status(404).json({
-        message: "User not found",
+        message: "Invalid username or password",
       });
     }
 
-    if (user.password !== validatedBody.password) {
-      return res.status(401).json({
-        message: "Invalid password",
-      });
-    }
-
-    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET);
+    const token = jwt.sign({ userID: user._id}, process.env.JWT_SECRET);
 
     res.json({
       token: token,
@@ -103,17 +109,69 @@ userRouter.post("/signin", async function (req, res) {
 
 });
 
-userRouter.post("/purchase", authMiddleware, function (req, res) {
-    const user = req.user;
-  res.json({
-    message: `${user.username} can purchase`,
-  });
+//purchase course route
+userRouter.post("/purchase", authMiddleware, async function (req, res) {
+  
+  try{
+    //Checks if the course exists in the database
+    const courseId = req.body.courseId;
+    const course = await CourseModel.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+      });
+    }
+
+    //checks if the user has already purchased the course
+    const existingPurchase = await PurchaseModel.findOne({ 
+      userId: req.decodedUserID, 
+      courseId: course._id,
+    });
+
+    if (existingPurchase) {
+      return res.status(400).json({
+        message: "Course already purchased",
+      });
+    }
+
+
+    //Creates a new purchase
+    const newPurchase  = new PurchaseModel({
+      userId: req.decodedUserID, 
+      courseId: course._id, 
+    });
+    await newPurchase.save();
+
+    res.status(201).json({
+      message: "Purchase successful",
+    });
+
+    
+
+  }catch(err){
+    res.status(500).json({
+      message: "Internal server error",
+      error: err.message
+    });
+  }
+
 });
 
-userRouter.get("/purchases", authMiddleware, function (req, res) {
-  res.json({
-    message: `Purchase history for ${req.user.username}`,
-  });
+//Get all purchases route
+userRouter.get("/purchases", authMiddleware, async function (req, res) {
+  try{
+
+    const allPurchases = await PurchaseModel.find({ userId: req.decodedUserID });
+
+    res.json({allPurchases});
+
+  }catch(err){
+    res.status(500).json({
+      message: "Internal server error",
+      error: err.message
+    });
+  }
 });
 
 module.exports = {

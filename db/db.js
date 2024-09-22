@@ -13,22 +13,17 @@ const Admin = new Schema({
   email: {type: String, unique: true},
   username: {type: String, unique: true},
   password: String,
-  firstName: String,
-  lastName: String,
 });
 
 const Course = new Schema({
   title: String,
   description: String,
-  prince: Number,
-  imageURL: String,
-  creatorId: {type: Schema.Types.ObjectId, ref: 'users'},
 });
 
 const Purchase = new Schema({
   userId: {type: Schema.Types.ObjectId, ref: 'users'},
   courseId: {type: Schema.Types.ObjectId, ref: 'courses'},
-  purchaseDate: {type: Date, default: Date.now},
+  // purchaseDate: {type: Date, default: Date.now},
 });
 
 
