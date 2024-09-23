@@ -93,8 +93,6 @@ userRouter.post("/signin", async function (req, res) {
         username: username,
     });
 
-    console.log(user);
-
     if (!user) {
       return res.status(404).json({
         message: "Invalid username or password",

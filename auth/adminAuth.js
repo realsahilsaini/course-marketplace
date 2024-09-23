@@ -9,17 +9,13 @@ async function adminAuth(req, res, next) {
     });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decodedAdmin) => {
-    if (err) {
-      return res.status(401).json({
-        message: "Unauthorized",
-      });
-    }
 
-    //send the decoded admin id to the next route
-    req.decodedAdminID = decodedAdmin.adminID;
+    const decodedAdminID = await jwt.verify(token, process.env.JWT_SECRET);
+
+    req.decodedAdminID = decodedAdminID.adminId;
+
     next();
-  });
+  // });
 }
 
 module.exports = {

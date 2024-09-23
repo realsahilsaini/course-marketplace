@@ -20,6 +20,7 @@ const Admin = new Schema({
 const Course = new Schema({
   title: String,
   description: String,
+  creatorId: {type: Schema.Types.ObjectId, ref: 'admins'},
 });
 
 const Purchase = new Schema({

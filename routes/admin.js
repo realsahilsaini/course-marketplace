@@ -59,9 +59,9 @@ adminRouter.post("/signup", async (req, res) => {
 
     res.status(201).json({ message: "Signup successful" });
   } catch (err) {
-    console.log("Error finding admin", err);
     res.status(500).json({
       message: "Internal server error",
+      error: err,
     });
   }
 });
@@ -89,7 +89,7 @@ adminRouter.post("/signin", async (req, res) => {
 
 
   const token = jwt.sign(
-    { adminId: existingAdmin._id },
+    { adminId: existingAdmin._id.toString() },
     process.env.JWT_SECRET
   );
 
@@ -131,8 +131,13 @@ adminRouter.post("/course/create", adminAuth, async (req, res) => {
       });
     }
 
-    const newCourse = new CourseModel(newCourseDetails);
-    newCourse.save();
+    const newCourse = new CourseModel({
+      title: newCourseDetails.title,
+      description: newCourseDetails.description,
+      creatorId: req.decodedAdminID,
+    });
+    
+    await newCourse.save();
 
     res.status(201).json({
       message: "Course created successfully",
@@ -149,8 +154,22 @@ adminRouter.post("/course/create", adminAuth, async (req, res) => {
 });
 
 //Delete course route
-adminRouter.delete("/course/:id", adminAuth, async (req, res) => {
+adminRouter.delete("/course/delete/:id", adminAuth, async (req, res) => {
   try{ 
+
+    const courseToDelete = await CourseModel.findById(req.params.id);
+
+    if(!courseToDelete){
+      return res.status(400).json({
+        message: "Course not found",
+      });
+    }
+
+    if (courseToDelete.creatorId.toString() !== req.decodedAdminID.toString()) {
+      return res.status(401).json({
+        message: "You can't delete other admin's course",
+      });
+    }
 
     await CourseModel.findByIdAndDelete(req.params.id);
     res.json({
@@ -165,6 +184,9 @@ adminRouter.delete("/course/:id", adminAuth, async (req, res) => {
     });
 
   }
+
+
+
 });
 
 //Edit course content route
@@ -173,6 +195,22 @@ adminRouter.put("/course/edit/:id", adminAuth, async (req, res) => {
 
     const courseID = req.params.id;
     const updatedCourseContent = req.body;
+
+    const courseToUpdate = await CourseModel.findById(courseID);
+
+    if(!courseToUpdate){
+      return res.status(400).json({
+        message: "Course not found",
+      });
+    }
+
+
+    if (courseToUpdate.creatorId.toString() !== req.decodedAdminID.toString()) {
+      return res.status(401).json({
+        message: "You can't edit other admin's course",
+      });
+    }
+
 
     const updateCourse = await CourseModel.findByIdAndUpdate(
       courseID,
