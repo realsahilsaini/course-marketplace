@@ -28,12 +28,12 @@ const requiredBodySignup = z.object({
     .regex(/[0-9]/, "Password must contain at least one number")
     .regex(/[\W_]/, "Password must contain at least one special character"),
 
-    firstName: z.string().min(1, "First name cannot be empty"),
+  firstName: z.string().min(1, "First name cannot be empty"),
 
-    lastName: z.string().min(1, "Last name cannot be empty"),
+  lastName: z.string().min(1, "Last name cannot be empty"),
 });
 
-//User signup route 
+//User signup route
 userRouter.post("/signup", async function (req, res) {
   try {
     const validatedBody = requiredBodySignup.parse(req.body);
@@ -43,7 +43,7 @@ userRouter.post("/signup", async function (req, res) {
     });
 
     const existingUserWithEmail = await UserModel.findOne({
-      email: validatedBody.email, 
+      email: validatedBody.email,
     });
 
     if (existingUserWithEmail || existingUserWithUsername) {
@@ -51,7 +51,6 @@ userRouter.post("/signup", async function (req, res) {
         message: "User already exists with this email or username",
       });
     }
-
 
     //hash the password
     const hashedPassword = await bcrypt.hash(validatedBody.password, 10);
@@ -63,7 +62,7 @@ userRouter.post("/signup", async function (req, res) {
       firstName: validatedBody.firstName,
       lastName: validatedBody.lastName,
     });
-    
+
     await newUser.save();
 
     res.status(201).json({ message: "Signup successful" });
@@ -76,9 +75,9 @@ userRouter.post("/signup", async function (req, res) {
     }
 
     //handel other errors
-    res.status(500).json({ 
-        message: "Internal server error" ,
-        error: err.message
+    res.status(500).json({
+      message: "Internal server error",
+      error: err.message,
     });
   }
 });
@@ -86,11 +85,10 @@ userRouter.post("/signup", async function (req, res) {
 //User signin route
 userRouter.post("/signin", async function (req, res) {
   try {
-
     const { username, password } = req.body;
 
-    const user = await UserModel.findOne({ 
-        username: username,
+    const user = await UserModel.findOne({
+      username: username,
     });
 
     if (!user) {
@@ -107,7 +105,7 @@ userRouter.post("/signin", async function (req, res) {
       });
     }
 
-    const token = jwt.sign({ userID: user._id}, process.env.JWT_SECRET);
+    const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET);
 
     res.json({
       token: token,
@@ -122,17 +120,35 @@ userRouter.post("/signin", async function (req, res) {
     }
 
     //handel other errors
-    res.status(500).json({ 
-        message: "Internal server error" 
+    res.status(500).json({
+      message: "Internal server error",
     });
   }
+});
 
+//See all courses route
+userRouter.get("/courses", async function (req, res) {
+  try {
+    const allcourses = await CourseModel.find({});
+
+    if (allcourses.length === 0) {
+      return res.status(404).json({
+        message: "No courses found",
+      });
+    }
+
+    res.send(allcourses);
+  } catch (err) {
+    res.status(500).json({
+      message: "Internal server error",
+      error: err.message,
+    });
+  }
 });
 
 //purchase course route
 userRouter.post("/purchase", userAuth, async function (req, res) {
-  
-  try{
+  try {
     //Checks if the course exists in the database
     const courseId = req.body.courseId;
     const course = await CourseModel.findById(courseId);
@@ -144,8 +160,8 @@ userRouter.post("/purchase", userAuth, async function (req, res) {
     }
 
     //checks if the user has already purchased the course
-    const existingPurchase = await PurchaseModel.findOne({ 
-      userId: req.decodedUserID, 
+    const existingPurchase = await PurchaseModel.findOne({
+      userId: req.decodedUserID,
       courseId: course._id,
     });
 
@@ -155,11 +171,10 @@ userRouter.post("/purchase", userAuth, async function (req, res) {
       });
     }
 
-
     //Creates a new purchase
-    const newPurchase  = new PurchaseModel({
-      userId: req.decodedUserID, 
-      courseId: course._id, 
+    const newPurchase = new PurchaseModel({
+      userId: req.decodedUserID,
+      courseId: course._id,
     });
 
     await newPurchase.save();
@@ -167,30 +182,26 @@ userRouter.post("/purchase", userAuth, async function (req, res) {
     res.status(201).json({
       message: "Purchase successful",
     });
-
-    
-
-  }catch(err){
+  } catch (err) {
     res.status(500).json({
       message: "Internal server error",
-      error: err.message
+      error: err.message,
     });
   }
-
 });
 
 //Get all purchases route
 userRouter.get("/purchases", userAuth, async function (req, res) {
-  try{
+  try {
+    const allPurchases = await PurchaseModel.find({
+      userId: req.decodedUserID,
+    });
 
-    const allPurchases = await PurchaseModel.find({ userId: req.decodedUserID });
-
-    if(allPurchases.length === 0){
+    if (allPurchases.length === 0) {
       return res.status(404).json({
-        message: "No purchases found"
+        message: "No purchases found",
       });
     }
-
 
     //CourseModel's for user purchases
     const CourseDetails = [];
@@ -201,13 +212,10 @@ userRouter.get("/purchases", userAuth, async function (req, res) {
     }
 
     res.send(CourseDetails);
-
-
-
-  }catch(err){
+  } catch (err) {
     res.status(500).json({
       message: "Internal server error",
-      error: err.message
+      error: err.message,
     });
   }
 });
