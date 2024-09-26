@@ -2,26 +2,14 @@ const express = require('express');
 const {userRouter} = require('./routes/user');
 const {courseRouter} = require('./routes/course');
 const {adminRouter} = require('./routes/admin');
+const connectDB = require('./connectDB');
 const mongoose = require('mongoose');
 require("dotenv").config();
 const app = express();
 app.use(express.json());
 
 
-//Connect to database 
-async function connectDB(){
-  try{
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("\nDatabase connected successfully");
-  }catch(err){
-    console.log("\nError connecting to database", err);
-    process.exit(1);
-  }
-}
-connectDB();
-
-
-mongoose.connect(process.env.MONGO_URI);
+connectDB(process.env.MONGO_URI);
 
 
 app.use('/api/v1/user', userRouter);
